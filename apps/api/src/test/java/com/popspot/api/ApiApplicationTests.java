@@ -23,11 +23,22 @@ class ApiApplicationTests {
 	@Autowired
 	JdbcClient jdbc;
 
+	@Autowired
+	org.springframework.boot.health.actuate.endpoint.HealthEndpointGroups health;
+
 	@Test
 	void healthIsUp() throws Exception {
 		mvc.perform(get("/actuator/health"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("UP"));
+	}
+
+	@Test
+	void readinessIncludesDatabaseButLivenessDoesNot() throws Exception {
+		mvc.perform(get("/actuator/health/readiness")).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("UP"));
+		mvc.perform(get("/actuator/health/liveness")).andExpect(status().isOk());
+		org.assertj.core.api.Assertions.assertThat(health.get("readiness").isMember("db")).isTrue();
+		org.assertj.core.api.Assertions.assertThat(health.get("liveness").isMember("db")).isFalse();
 	}
 
 	@Test

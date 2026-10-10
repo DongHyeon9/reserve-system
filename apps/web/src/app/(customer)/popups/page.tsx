@@ -84,6 +84,7 @@ export default async function PopupsPage({ searchParams }: { searchParams: Promi
           <div className="result-summary">
             <strong>팝업 {result.totalItems}개</strong>
           </div>
+          <h2 className="sr-only">검색 결과</h2>
           <div className="card-grid">
             {result.items.map((popup) => <PopupCard key={popup.id} popup={popup} />)}
           </div>

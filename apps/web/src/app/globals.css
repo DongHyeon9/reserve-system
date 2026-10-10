@@ -403,3 +403,6 @@ dialog::backdrop { background: rgb(17 17 17 / 55%); backdrop-filter: blur(2px); 
 }
 .btn-kakao { color: #191919; background: #fee500; }
 .btn-kakao:hover { background: #f5dc00; }
+/* Keeps the footer below the fold while streamed content replaces loading states (avoids layout shift / CLS). */
+.customer-view > main { min-height: calc(100vh - 72px); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
