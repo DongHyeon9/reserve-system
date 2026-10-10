@@ -200,6 +200,97 @@
         }
       }
     },
+    "/api/admin/reservations/{id}/contact" : {
+      "post" : {
+        "tags" : [ "admin-reservation-controller" ],
+        "operationId" : "contact",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Contact"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/reservations/{id}/check-in" : {
+      "post" : {
+        "tags" : [ "admin-reservation-controller" ],
+        "operationId" : "checkIn",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Detail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/reservations/{id}/cancel" : {
+      "post" : {
+        "tags" : [ "admin-reservation-controller" ],
+        "operationId" : "cancel_1",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CancelForm"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Detail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/popups" : {
       "get" : {
         "tags" : [ "admin-catalog-controller" ],
@@ -617,6 +708,107 @@
         }
       }
     },
+    "/api/admin/reservations" : {
+      "get" : {
+        "tags" : [ "admin-reservation-controller" ],
+        "operationId" : "search",
+        "parameters" : [ {
+          "name" : "q",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 50,
+            "minLength" : 0
+          }
+        }, {
+          "name" : "popupId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "date",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        }, {
+          "name" : "status",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "pattern" : "CONFIRMED|CANCELLED|CHECKED_IN"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0,
+            "maximum" : 1000,
+            "minimum" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20,
+            "maximum" : 100,
+            "minimum" : 1
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseRow"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/reservations/{id}" : {
+      "get" : {
+        "tags" : [ "admin-reservation-controller" ],
+        "operationId" : "get_2",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Detail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/dashboard" : {
       "get" : {
         "tags" : [ "admin-dashboard-controller" ],
@@ -948,6 +1140,113 @@
             "format" : "date-time"
           }
         }
+      },
+      "Contact" : {
+        "type" : "object",
+        "properties" : {
+          "contactPhone" : {
+            "type" : "string"
+          },
+          "contactEmail" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Detail" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "popupId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "popupTitle" : {
+            "type" : "string"
+          },
+          "slotStartsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "slotEndsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "popupAddress" : {
+            "type" : "string"
+          },
+          "partySize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "contactName" : {
+            "type" : "string"
+          },
+          "contactPhoneMasked" : {
+            "type" : "string"
+          },
+          "contactEmailMasked" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "cancelledAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "checkedInAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "canCancel" : {
+            "type" : "boolean"
+          },
+          "canCheckIn" : {
+            "type" : "boolean"
+          },
+          "events" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Event"
+            }
+          }
+        }
+      },
+      "Event" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string"
+          },
+          "actorRole" : {
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "CancelForm" : {
+        "type" : "object",
+        "properties" : {
+          "reason" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "reason" ]
       },
       "SlotForm" : {
         "type" : "object",
@@ -1321,6 +1620,73 @@
             "items" : {
               "type" : "string"
             }
+          }
+        }
+      },
+      "PageResponseRow" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Row"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalItems" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "Row" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "popupId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "popupTitle" : {
+            "type" : "string"
+          },
+          "slotStartsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "partySize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "contactName" : {
+            "type" : "string"
+          },
+          "contactPhoneMasked" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
           }
         }
       },

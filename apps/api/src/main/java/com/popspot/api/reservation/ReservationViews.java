@@ -53,7 +53,17 @@ public final class ReservationViews {
 	}
 
 	/** "010-1234-5678" → "010-12**-56**". Customers and operators see only the masked form by default. */
-	static String maskPhone(String phone) {
+	/** "popup@example.com" → "p***p@example.com". */
+	public static String maskEmail(String email) {
+		int at = email.indexOf('@');
+		if (at <= 0) {
+			return "***";
+		}
+		String local = email.substring(0, at);
+		return local.charAt(0) + "***" + (local.length() > 1 ? local.charAt(local.length() - 1) : "") + email.substring(at);
+	}
+
+	public static String maskPhone(String phone) {
 		String d = phone.replaceAll("\\D", "");
 		int mid = d.length() - 7;
 		return d.substring(0, 3) + "-" + d.substring(3, 5) + "*".repeat(mid - 2) + "-" + d.substring(3 + mid, 5 + mid) + "**";

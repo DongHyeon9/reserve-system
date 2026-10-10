@@ -110,3 +110,29 @@ export type AdminPopup = AdminPopupRow & {
 };
 
 export type AdminSlot = { id: number; startsAt: string; endsAt: string; capacity: number; reserved: number; remaining: number };
+
+export type AdminReservationRow = {
+  id: string;
+  code: string;
+  status: BookingStatus;
+  popupId: number;
+  popupTitle: string;
+  slotStartsAt: string;
+  partySize: number;
+  contactName: string;
+  contactPhoneMasked: string;
+  createdAt: string;
+};
+
+export type AdminReservation = AdminReservationRow & {
+  slotEndsAt: string;
+  popupAddress: string;
+  contactEmailMasked: string;
+  cancelledAt: string | null;
+  checkedInAt: string | null;
+  canCancel: boolean;
+  canCheckIn: boolean;
+  events: { type: "CREATED" | "CANCELLED" | "CHECKED_IN"; actorRole: "CUSTOMER" | "ADMIN"; occurredAt: string }[];
+};
+
+export type ReservationContact = { contactPhone: string; contactEmail: string };
