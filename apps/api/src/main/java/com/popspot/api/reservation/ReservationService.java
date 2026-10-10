@@ -3,6 +3,7 @@ package com.popspot.api.reservation;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.dao.DuplicateKeyException;
@@ -138,6 +139,60 @@ public class ReservationService {
 	@Transactional(readOnly = true)
 	public ReservationView get(UUID user, UUID id) {
 		return queries.findOwned(id, user, clock.instant()).orElseThrow(ApiException::notFound);
+	}
+
+	public record ReservationList(List<ReservationView> items, int page, int size, long totalItems, int totalPages,
+			ReservationQueries.Counts counts) {
+	}
+
+	@Transactional(readOnly = true)
+	public ReservationList list(UUID user, ReservationQueries.Tab tab, int page, int size) {
+		Instant now = clock.instant();
+		var counts = queries.counts(user, now);
+		long total = switch (tab) {
+			case UPCOMING -> counts.upcoming();
+			case PAST -> counts.past();
+			case CANCELLED -> counts.cancelled();
+		};
+		return new ReservationList(queries.list(user, tab, page, size, now), page, size, total, (int) ((total + size - 1) / size), counts);
+	}
+
+	/**
+	 * Idempotent by state transition: only a CONFIRMED row before the deadline flips to CANCELLED, and only that winning
+	 * update returns seats. A concurrent or repeated cancel finds the row already CANCELLED and returns it unchanged.
+	 */
+	@Transactional
+	public ReservationView cancel(UUID user, UUID id, String actorRole) {
+		Instant now = clock.instant();
+		record Released(long slotId, int partySize) {
+		}
+		var released = jdbc.sql("""
+				update reservations r set status = 'CANCELLED', cancelled_at = :now
+				from slots s, popups p
+				where r.id = :id and r.user_id = :user and r.status = 'CONFIRMED'
+				  and s.id = r.slot_id and p.id = r.popup_id
+				  and :now < s.starts_at - make_interval(hours => p.cancel_cutoff_hours)
+				returning r.slot_id, r.party_size""")
+			.param("now", Timestamp.from(now))
+			.param("id", id)
+			.param("user", user)
+			.query((rs, i) -> new Released(rs.getLong("slot_id"), rs.getInt("party_size")))
+			.optional();
+		if (released.isPresent()) {
+			jdbc.sql("update slots set reserved_count = reserved_count - ? where id = ?")
+				.params(released.get().partySize(), released.get().slotId())
+				.update();
+			jdbc.sql("insert into reservation_events (reservation_id, type, actor_id, actor_role, occurred_at) values (?, 'CANCELLED', ?, ?, ?)")
+				.params(id, user, actorRole, Timestamp.from(now))
+				.update();
+			return queries.findOwned(id, user, now).orElseThrow();
+		}
+		ReservationView current = queries.findOwned(id, user, now).orElseThrow(ApiException::notFound);
+		return switch (current.status()) {
+			case "CANCELLED" -> current;
+			case "CHECKED_IN" -> throw ApiException.conflict("NOT_CANCELLABLE", "이미 체크인된 예약은 취소할 수 없습니다.");
+			default -> throw ApiException.conflict("CANCEL_DEADLINE_PASSED", "무료 취소 가능 시간이 지났습니다.");
+		};
 	}
 
 	private static ApiException duplicate() {

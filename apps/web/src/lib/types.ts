@@ -55,3 +55,5 @@ export type Reservation = {
 };
 
 export type PopupFacets = { areas: string[]; categories: string[] };
+
+export type ReservationList = PageResponse<Reservation> & { counts: { upcoming: number; past: number; cancelled: number } };

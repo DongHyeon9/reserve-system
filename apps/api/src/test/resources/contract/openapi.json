@@ -10,6 +10,54 @@
   } ],
   "paths" : {
     "/api/reservations" : {
+      "get" : {
+        "tags" : [ "reservation-controller" ],
+        "operationId" : "list",
+        "parameters" : [ {
+          "name" : "tab",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "UPCOMING",
+            "enum" : [ "UPCOMING", "PAST", "CANCELLED" ]
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0,
+            "maximum" : 1000,
+            "minimum" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 10,
+            "maximum" : 50,
+            "minimum" : 1
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReservationList"
+                }
+              }
+            }
+          }
+        }
+      },
       "post" : {
         "tags" : [ "reservation-controller" ],
         "operationId" : "create",
@@ -31,6 +79,33 @@
           },
           "required" : true
         },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReservationView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reservations/{id}/cancel" : {
+      "post" : {
+        "tags" : [ "reservation-controller" ],
+        "operationId" : "cancel",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -75,7 +150,7 @@
     "/api/popups" : {
       "get" : {
         "tags" : [ "popup-controller" ],
-        "operationId" : "list",
+        "operationId" : "list_1",
         "parameters" : [ {
           "name" : "q",
           "in" : "query",
@@ -343,6 +418,53 @@
           "endsAt" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "Counts" : {
+        "type" : "object",
+        "properties" : {
+          "upcoming" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "past" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "cancelled" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "ReservationList" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ReservationView"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalItems" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "counts" : {
+            "$ref" : "#/components/schemas/Counts"
           }
         }
       },

@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,6 +37,49 @@ class ReservationQueries {
 	/** Owner-scoped lookup: another user's reservation is indistinguishable from a missing one. */
 	Optional<ReservationView> findOwned(UUID id, UUID user, Instant now) {
 		return jdbc.sql(VIEW + " where r.id = ? and r.user_id = ?").params(id, user).query((rs, i) -> view(rs, now)).optional();
+	}
+
+	enum Tab {
+
+		UPCOMING("r.status <> 'CANCELLED' and s.ends_at > :now", "s.starts_at, r.id"),
+		PAST("r.status <> 'CANCELLED' and s.ends_at <= :now", "s.starts_at desc, r.id"),
+		CANCELLED("r.status = 'CANCELLED'", "r.cancelled_at desc, r.id");
+
+		final String where;
+
+		final String order;
+
+		Tab(String where, String order) {
+			this.where = where;
+			this.order = order;
+		}
+
+	}
+
+	record Counts(long upcoming, long past, long cancelled) {
+	}
+
+	List<ReservationView> list(UUID user, Tab tab, int page, int size, Instant now) {
+		return jdbc.sql(VIEW + " where r.user_id = :user and " + tab.where + " order by " + tab.order + " limit :size offset :offset")
+			.param("user", user)
+			.param("now", Timestamp.from(now))
+			.param("size", size)
+			.param("offset", (long) page * size)
+			.query((rs, i) -> view(rs, now))
+			.list();
+	}
+
+	Counts counts(UUID user, Instant now) {
+		return jdbc.sql("""
+				select count(*) filter (where %s) as upcoming,
+				       count(*) filter (where %s) as past,
+				       count(*) filter (where %s) as cancelled
+				from reservations r join slots s on s.id = r.slot_id
+				where r.user_id = :user""".formatted(Tab.UPCOMING.where, Tab.PAST.where, Tab.CANCELLED.where))
+			.param("user", user)
+			.param("now", Timestamp.from(now))
+			.query((rs, i) -> new Counts(rs.getLong("upcoming"), rs.getLong("past"), rs.getLong("cancelled")))
+			.single();
 	}
 
 	static ReservationView view(ResultSet rs, Instant now) throws SQLException {

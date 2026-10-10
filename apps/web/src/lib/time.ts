@@ -56,3 +56,9 @@ export function longDate(date: string) {
   const [year, month, day] = date.split("-");
   return `${year}년 ${Number(month)}월 ${Number(day)}일`;
 }
+
+/** Booking card date block in KST: { month: "10월", day: "18", weekday: "일요일" } */
+export function kstBookingDate(iso: string) {
+  const p = parts(iso, { month: "long", day: "numeric", weekday: "long" });
+  return { month: p.month, day: p.day, weekday: p.weekday };
+}

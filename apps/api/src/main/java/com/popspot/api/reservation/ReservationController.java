@@ -12,10 +12,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.popspot.api.reservation.ReservationViews.CreateReservationRequest;
 import com.popspot.api.reservation.ReservationViews.ReservationView;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -36,6 +40,18 @@ class ReservationController {
 			return ResponseEntity.ok().header("Idempotency-Replayed", "true").body(created.reservation());
 		}
 		return ResponseEntity.created(URI.create("/api/reservations/" + created.reservation().id())).body(created.reservation());
+	}
+
+	@GetMapping
+	ReservationService.ReservationList list(JwtAuthenticationToken auth, @RequestParam(defaultValue = "UPCOMING") ReservationQueries.Tab tab,
+			@RequestParam(defaultValue = "0") @Min(0) @Max(1000) int page, @RequestParam(defaultValue = "10") @Min(1) @Max(50) int size) {
+		return reservations.list(UUID.fromString(auth.getName()), tab, page, size);
+	}
+
+	/** Returns the cancelled reservation; repeating the call is safe and returns the same result. */
+	@PostMapping("/{id}/cancel")
+	ReservationView cancel(JwtAuthenticationToken auth, @PathVariable UUID id) {
+		return reservations.cancel(UUID.fromString(auth.getName()), id, "CUSTOMER");
 	}
 
 	@GetMapping("/{id}")
