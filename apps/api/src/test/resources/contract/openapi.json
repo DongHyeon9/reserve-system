@@ -295,6 +295,24 @@
           }
         }
       }
+    },
+    "/api/admin/dashboard" : {
+      "get" : {
+        "tags" : [ "admin-dashboard-controller" ],
+        "operationId" : "dashboard",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -684,6 +702,134 @@
             "items" : {
               "type" : "string"
             }
+          }
+        }
+      },
+      "Alert" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string"
+          },
+          "popupId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "popupTitle" : {
+            "type" : "string"
+          },
+          "slotId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "at" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "remaining" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "Dashboard" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "serverTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "kpis" : {
+            "$ref" : "#/components/schemas/Kpis"
+          },
+          "todaySlots" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SlotRow"
+            }
+          },
+          "alerts" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Alert"
+            }
+          }
+        }
+      },
+      "Kpis" : {
+        "type" : "object",
+        "properties" : {
+          "todayReservations" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "yesterdayReservations" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "reservationDeltaPercent" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "todayVisits" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "expectedVisits" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "checkInRatePercent" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "todaySlots" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "soldOutSlots" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "todayCancellations" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "cancelRatePercent" : {
+            "type" : "number",
+            "format" : "double"
+          }
+        }
+      },
+      "SlotRow" : {
+        "type" : "object",
+        "properties" : {
+          "slotId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "popupId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "popupTitle" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "capacity" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "reserved" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       }

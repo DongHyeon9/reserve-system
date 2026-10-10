@@ -57,3 +57,22 @@ export type Reservation = {
 export type PopupFacets = { areas: string[]; categories: string[] };
 
 export type ReservationList = PageResponse<Reservation> & { counts: { upcoming: number; past: number; cancelled: number } };
+
+export type AdminDashboard = {
+  date: string;
+  serverTime: string;
+  kpis: {
+    todayReservations: number;
+    yesterdayReservations: number;
+    reservationDeltaPercent: number | null;
+    todayVisits: number;
+    expectedVisits: number;
+    checkInRatePercent: number | null;
+    todaySlots: number;
+    soldOutSlots: number;
+    todayCancellations: number;
+    cancelRatePercent: number | null;
+  };
+  todaySlots: { slotId: number; popupId: number; popupTitle: string; startsAt: string; capacity: number; reserved: number }[];
+  alerts: { type: "SLOT_NEARLY_FULL" | "OPENING_SOON"; popupId: number; popupTitle: string; slotId: number | null; at: string; remaining: number | null }[];
+};

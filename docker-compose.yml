@@ -29,7 +29,7 @@ services:
       DEV_AUTH_ISSUER: ${DEV_AUTH_ISSUER:-}
       DEV_AUTH_JWT_SECRET: ${DEV_AUTH_JWT_SECRET:-}
     ports:
-      - "8080:8080"
+      - "${API_PORT:-8080}:8080"
     depends_on:
       db:
         condition: service_healthy
