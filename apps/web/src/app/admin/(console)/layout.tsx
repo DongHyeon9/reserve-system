@@ -20,7 +20,16 @@ export default async function AdminConsoleLayout({ children }: { children: React
         </main>
       );
     }
-    throw e;
+    // API unreachable or failing: explain instead of crashing into the generic error page. Spring still decides access.
+    return (
+      <main className="admin-login" id="main">
+        <div className="admin-login-card" role="alert">
+          <h1 style={{ fontSize: 26 }}>서버에 연결할 수 없습니다</h1>
+          <p className="muted">관리자 서버가 응답하지 않습니다. 잠시 후 다시 시도해 주세요.</p>
+          <a className="btn btn-secondary btn-block" href="/admin" style={{ marginTop: 16 }}>다시 시도</a>
+        </div>
+      </main>
+    );
   }
   return <AdminShell email={session.email}>{children}</AdminShell>;
 }

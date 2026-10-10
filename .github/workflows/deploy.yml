@@ -78,9 +78,8 @@ jobs:
     needs: api
     runs-on: ubuntu-latest
     environment: production
-    defaults:
-      run:
-        working-directory: apps/web
+    # Run the CLI from the repository root: the Vercel project's Root Directory is apps/web, so running inside
+    # apps/web would make `vercel build` look for apps/web/apps/web.
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

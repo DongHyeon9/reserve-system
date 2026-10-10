@@ -20,3 +20,13 @@ test("sends a request id with the bearer token and logs only route, status, code
   expect(logged).not.toContain("김팝업");
   expect(logged).not.toContain("secret-token");
 });
+
+test("a production server without API_BASE_URL fails clearly instead of calling localhost", async () => {
+  vi.stubEnv("NODE_ENV", "production");
+  vi.stubEnv("API_BASE_URL", "");
+  const fetchMock = vi.spyOn(globalThis, "fetch");
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  await expect(apiFetch("/api/popups")).rejects.toMatchObject({ status: 503, code: "API_NOT_CONFIGURED" });
+  expect(fetchMock).not.toHaveBeenCalled();
+  vi.unstubAllEnvs();
+});

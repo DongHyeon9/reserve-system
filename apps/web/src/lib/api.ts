@@ -11,7 +11,16 @@ export class ApiError extends Error {
   }
 }
 
-const baseUrl = () => process.env.API_BASE_URL ?? "http://localhost:8080";
+/** localhost is only a development default; a production server without API_BASE_URL must fail loudly, not guess. */
+function baseUrl() {
+  const configured = process.env.API_BASE_URL?.trim();
+  if (configured) return configured;
+  if (process.env.NODE_ENV === "production") {
+    console.error("API_BASE_URL is not configured for this deployment.");
+    return null;
+  }
+  return "http://localhost:8080";
+}
 
 /** Server-side call to the Spring API. The bearer token comes from the httpOnly session cookie and never reaches the browser. */
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -24,9 +33,12 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const requestId = crypto.randomUUID();
   headers.set("X-Request-Id", requestId);
 
+  const base = baseUrl();
+  if (!base) throw new ApiError(503, "API_NOT_CONFIGURED", "서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+
   let response: Response;
   try {
-    response = await fetch(`${baseUrl()}${path}`, { ...init, headers, cache: "no-store" });
+    response = await fetch(`${base}${path}`, { ...init, headers, cache: "no-store" });
   } catch {
     console.error("API unreachable", { path: path.split("?")[0], requestId });
     throw new ApiError(503, "API_UNAVAILABLE", "서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.");
