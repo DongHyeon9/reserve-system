@@ -2,6 +2,7 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { authErrorCode } from "@/lib/auth-errors";
 import { devAuthEnabled, signDevJwt } from "@/lib/dev-auth";
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, safeNextPath } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -25,7 +26,10 @@ export async function login(formData: FormData) {
   if (!validEmail || !password) back("invalid");
 
   const { error } = await (await createClient()).auth.signInWithPassword({ email, password });
-  if (error) back(error.code === "invalid_credentials" ? "invalid" : error.code === "email_not_confirmed" ? "unconfirmed" : "unavailable");
+  if (error) {
+    console.warn("Supabase sign-in failed", { code: error.code, status: error.status });
+    back(authErrorCode(error.code));
+  }
   redirect(next);
 }
 
@@ -40,7 +44,11 @@ export async function signup(formData: FormData) {
     password,
     options: { emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(next)}`, data: { name } },
   });
-  if (error) back(error.code === "weak_password" ? "weak-password" : "unavailable", "signup");
+  if (error) {
+    // Code and status only: the error message can echo the email address.
+    console.warn("Supabase sign-up failed", { code: error.code, status: error.status });
+    back(authErrorCode(error.code), "signup");
+  }
   if (data.session) redirect(next);
   redirect(`/login?notice=check-email&next=${encodeURIComponent(next)}`);
 }

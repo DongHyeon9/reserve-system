@@ -1,18 +1,12 @@
 import Link from "next/link";
 import { login } from "@/app/auth-actions";
 import { AuthForm } from "@/components/AuthForm";
+import { AUTH_ERROR_MESSAGES as errors } from "@/lib/auth-errors";
 import { devAuthEnabled } from "@/lib/dev-auth";
 import { safeNextPath } from "@/lib/session";
 
 export const metadata = { title: "로그인" };
 
-const errors: Record<string, string> = {
-  unavailable: "로그인을 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
-  invalid: "이메일 또는 비밀번호를 확인해 주세요.",
-  unconfirmed: "이메일 인증이 아직 완료되지 않았습니다. 받은 메일의 링크를 눌러 주세요.",
-  "weak-password": "비밀번호는 8자 이상이어야 합니다.",
-  callback: "인증 링크가 만료되었거나 올바르지 않습니다. 다시 로그인해 주세요.",
-};
 const notices: Record<string, string> = {
   "check-email": "확인 메일을 보냈습니다. 메일의 링크를 누르면 로그인됩니다.",
 };
