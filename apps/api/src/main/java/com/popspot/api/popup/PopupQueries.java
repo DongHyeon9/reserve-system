@@ -17,7 +17,7 @@ import com.popspot.api.popup.PopupViews.SlotView;
 public class PopupQueries {
 
 	/** Popup columns plus future-slot aggregates needed to derive {@link ReservationStatus}. */
-	private static final String POPUP_WITH_SEATS = """
+	public static final String POPUP_WITH_SEATS = """
 			select p.*,
 			       coalesce(agg.future_slots, 0) as future_slots,
 			       coalesce(agg.future_with_seats, 0) as future_with_seats,
@@ -110,7 +110,7 @@ public class PopupQueries {
 		return jdbc.sql("select distinct " + column + " from popups where publish_status = 'PUBLISHED' order by 1").query(String.class).list();
 	}
 
-	private static PopupRow popupRow(ResultSet rs, int rowNum) throws SQLException {
+	public static PopupRow popupRow(ResultSet rs, int rowNum) throws SQLException {
 		return new PopupRow(rs.getLong("id"), rs.getString("title"), rs.getString("label"), rs.getString("area"), rs.getString("category"),
 				rs.getString("art_theme"), rs.getObject("starts_on", LocalDate.class), rs.getObject("ends_on", LocalDate.class),
 				rs.getString("publish_status"), instant(rs, "opens_at"), instant(rs, "closes_at"), rs.getBoolean("manually_closed"),

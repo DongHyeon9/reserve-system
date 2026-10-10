@@ -76,3 +76,37 @@ export type AdminDashboard = {
   todaySlots: { slotId: number; popupId: number; popupTitle: string; startsAt: string; capacity: number; reserved: number }[];
   alerts: { type: "SLOT_NEARLY_FULL" | "OPENING_SOON"; popupId: number; popupTitle: string; slotId: number | null; at: string; remaining: number | null }[];
 };
+
+export type PublishStatus = "DRAFT" | "PUBLISHED" | "ENDED";
+
+export type AdminPopupRow = {
+  id: number;
+  title: string;
+  area: string;
+  category: string;
+  startsOn: string;
+  endsOn: string;
+  publishStatus: PublishStatus;
+  reservationStatus: ReservationStatus;
+  opensAt: string;
+  slotCount: number;
+  activeReservations: number;
+  updatedAt: string;
+};
+
+export type AdminPopup = AdminPopupRow & {
+  label: string;
+  summary: string;
+  description: string;
+  notice: string | null;
+  address: string;
+  operatingHours: string;
+  visitMinutes: number;
+  artTheme: ArtTheme;
+  closesAt: string | null;
+  manuallyClosed: boolean;
+  maxPartySize: number;
+  cancelCutoffHours: number;
+};
+
+export type AdminSlot = { id: number; startsAt: string; endsAt: string; capacity: number; reserved: number; remaining: number };

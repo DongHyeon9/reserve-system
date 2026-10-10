@@ -62,3 +62,22 @@ export function kstBookingDate(iso: string) {
   const p = parts(iso, { month: "long", day: "numeric", weekday: "long" });
   return { month: p.month, day: p.day, weekday: p.weekday };
 }
+
+const LOCAL_INPUT = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(:\d{2})?$/;
+
+/** KST datetime-local value "2026-10-20T14:00" → "2026-10-20T14:00:00+09:00"; null when malformed. */
+export function kstLocalInputToIso(value: string) {
+  const m = LOCAL_INPUT.exec(value);
+  return m ? `${m[1]}T${m[2]}${m[3] ?? ":00"}+09:00` : null;
+}
+
+/** UTC instant → KST datetime-local value "2026-10-20T14:00". */
+export function isoToKstLocalInput(iso: string) {
+  return `${kstDateKey(iso)}T${kstTime(iso)}`;
+}
+
+/** Calendar date key shifted by whole days: ("2026-10-31", 1) → "2026-11-01". */
+export function addDays(dateKey: string, days: number) {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
