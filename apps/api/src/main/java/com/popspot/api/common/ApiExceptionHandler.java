@@ -26,6 +26,10 @@ class ApiExceptionHandler {
 
 	@ExceptionHandler(ApiException.class)
 	ResponseEntity<ApiProblem> api(ApiException e) {
+		if (e.status() == HttpStatus.CONFLICT) {
+			// Business conflicts (sold out, duplicate, not open...) feed the conflict-rate metric. Code only, no request data.
+			log.atInfo().addKeyValue("event", "business_conflict").addKeyValue("code", e.code()).log("Business conflict {}", e.code());
+		}
 		return problem(e.status(), e.code(), e.getMessage(), List.of());
 	}
 

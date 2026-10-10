@@ -1,0 +1,38 @@
+name: DB backup
+
+# Weekly encrypted logical backup of the popspot schema, kept as a short-lived artifact.
+# The dump is encrypted before upload (artifacts of a public repository are readable by others).
+# Restore: download the artifact, then BACKUP_PASSPHRASE=… PG*=… scripts/db-restore.sh < popspot.dump.gpg
+on:
+  schedule:
+    - cron: "0 18 * * 0" # Monday 03:00 KST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    if: vars.BACKUP_PGHOST != ''
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dump and encrypt
+        env:
+          PGHOST: ${{ vars.BACKUP_PGHOST }}
+          PGPORT: "5432"
+          PGUSER: ${{ vars.DB_USERNAME }}
+          PGDATABASE: postgres
+          PGPASSWORD: ${{ secrets.BACKUP_DB_PASSWORD }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          PGSSLMODE: require
+        run: |
+          bash scripts/db-backup.sh popspot > popspot.dump.gpg
+          test -s popspot.dump.gpg
+          gpg --list-packets --batch --pinentry-mode loopback --passphrase-file <(printf "%s" "$BACKUP_PASSPHRASE") popspot.dump.gpg > /dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: popspot-backup-${{ github.run_id }}
+          path: popspot.dump.gpg
+          retention-days: 14
