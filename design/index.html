@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Popspot 팝업스토어 예약 서비스 디자인 프로토타입" />
+    <title>Popspot 디자인 프로토타입</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#app">본문으로 건너뛰기</a>
+    <aside class="prototype-bar" aria-label="프로토타입 화면 선택">
+      <a class="prototype-brand" href="#home" aria-label="Popspot 디자인 홈">
+        <span class="prototype-dot"></span> Popspot Design
+      </a>
+      <label for="screen-select">화면 바로가기</label>
+      <select id="screen-select">
+        <optgroup label="고객 화면">
+          <option value="home">01 홈</option>
+          <option value="popups">02 팝업 탐색</option>
+          <option value="popup-detail">03 팝업 상세</option>
+          <option value="auth">04 로그인·가입</option>
+          <option value="reserve">05 예약 작성</option>
+          <option value="reserve-complete">06 예약 완료</option>
+          <option value="my-reservations">07 내 예약</option>
+          <option value="reservation-detail">08 예약 상세·취소</option>
+        </optgroup>
+        <optgroup label="관리자 화면">
+          <option value="admin-login">09 관리자 로그인</option>
+          <option value="admin-dashboard">10 관리자 대시보드</option>
+          <option value="admin-popups">11 팝업 관리</option>
+          <option value="admin-popup-form">12 팝업 등록·수정</option>
+          <option value="admin-slots">13 회차·정원 관리</option>
+          <option value="admin-reservations">14 예약 관리</option>
+          <option value="admin-reservation-detail">15 관리자 예약 상세</option>
+        </optgroup>
+      </select>
+      <span class="prototype-meta">반응형 · 키보드 탐색 지원</span>
+    </aside>
+    <main id="app" tabindex="-1"></main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
