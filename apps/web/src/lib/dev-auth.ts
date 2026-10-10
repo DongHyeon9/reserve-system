@@ -1,5 +1,5 @@
-// TEMP: local stand-in for Supabase Auth until the project credentials exist (see todo/01-supabase.md).
-// Mints HS256 tokens shaped like Supabase user tokens so Spring verifies them the same way.
+// Local E2E only: mints HS256 tokens shaped like Supabase user tokens so Spring can verify them with the
+// dev fallback (issuer popspot-dev). Real users sign in with Supabase Auth. Never enabled in production.
 import { createHash, createHmac } from "node:crypto";
 
 const base64url = (input: string | Buffer) => Buffer.from(input).toString("base64url");
