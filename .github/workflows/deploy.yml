@@ -92,6 +92,29 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      # Turns the CLI's generic "Could not retrieve Project Settings" into a specific cause. Values are never printed.
+      - name: Check Vercel settings
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          for name in VERCEL_ORG_ID VERCEL_PROJECT_ID VERCEL_TOKEN; do
+            value="${!name}"
+            [[ -n "$value" ]] || { echo "::error::$name is empty or not visible to this job"; exit 1; }
+            [[ "$value" =~ ^[A-Za-z0-9_]+$ ]] || { echo "::error::$name contains quotes, spaces, line breaks or other extra characters; paste the bare value"; exit 1; }
+          done
+          [[ "$VERCEL_PROJECT_ID" == prj_* ]] || { echo "::error::VERCEL_PROJECT_ID should start with prj_"; exit 1; }
+          [[ "$VERCEL_ORG_ID" == team_* ]] || echo "VERCEL_ORG_ID is not a team id; checking as a personal-account project."
+          # Team projects are addressed with ?teamId=; a personal account's projects are the token owner's default scope.
+          url="https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID"
+          [[ "$VERCEL_ORG_ID" == team_* ]] && url="$url?teamId=$VERCEL_ORG_ID"
+          status=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $VERCEL_TOKEN" "$url")
+          case "$status" in
+            200) echo "Vercel token can read the project in this team." ;;
+            401) echo "::error::VERCEL_TOKEN is invalid or expired (HTTP 401)"; exit 1 ;;
+            403) echo "::error::VERCEL_TOKEN is invalid/expired or has no access to this team (HTTP 403); create a new token with Scope = the team that owns the project"; exit 1 ;;
+            404) echo "::error::Project not found in this team (HTTP 404); VERCEL_ORG_ID and VERCEL_PROJECT_ID do not belong together"; exit 1 ;;
+            *) echo "::error::Vercel API answered HTTP $status"; exit 1 ;;
+          esac
       - run: npx --yes vercel@60.1.1 pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
       - run: npx --yes vercel@60.1.1 build --prod --token="${{ secrets.VERCEL_TOKEN }}"
       - name: Deploy prebuilt output
