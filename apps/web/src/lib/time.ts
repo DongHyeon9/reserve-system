@@ -44,3 +44,15 @@ export function dDay(targetIso: string, serverNowIso: string) {
   const days = Math.round((Date.parse(kstDateKey(targetIso)) - Date.parse(kstDateKey(serverNowIso))) / 86_400_000);
   return days <= 0 ? "D-DAY" : `D-${days}`;
 }
+
+/** "10월 20일 14:00" in KST. */
+export function kstMonthDayTime(iso: string) {
+  const [, month, day] = kstDateKey(iso).split("-");
+  return `${Number(month)}월 ${Number(day)}일 ${kstTime(iso)}`;
+}
+
+/** Plain calendar date "2026-11-03" → "2026년 11월 3일" */
+export function longDate(date: string) {
+  const [year, month, day] = date.split("-");
+  return `${year}년 ${Number(month)}월 ${Number(day)}일`;
+}

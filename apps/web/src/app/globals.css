@@ -112,12 +112,12 @@ button.text-link { padding: 0; background: none; border: 0; cursor: pointer; }
 .popup-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
 .card-art { aspect-ratio: 4 / 3; padding: 18px; display: flex; align-items: flex-end; color: white; position: relative; overflow: hidden; }
 .card-art::before { content: ""; position: absolute; width: 140px; height: 140px; border: 28px solid rgb(255 255 255 / 55%); border-radius: 50%; top: -36px; right: -30px; }
-.art-red { background: linear-gradient(145deg, #e6464f, #8f182c); }
-.art-blue { background: linear-gradient(145deg, #3d51cf, #18235f); }
-.art-green { background: linear-gradient(145deg, #1f8064, #0f4438); }
-.art-orange { background: linear-gradient(145deg, #f08747, #9d3922); }
-.art-purple { background: linear-gradient(145deg, #9456c8, #49206b); }
-.art-yellow { background: linear-gradient(145deg, #e4b635, #9c6512); }
+.art-red, .detail-hero-art.art-red { background: linear-gradient(145deg, #e6464f, #8f182c); }
+.art-blue, .detail-hero-art.art-blue { background: linear-gradient(145deg, #3d51cf, #18235f); }
+.art-green, .detail-hero-art.art-green { background: linear-gradient(145deg, #1f8064, #0f4438); }
+.art-orange, .detail-hero-art.art-orange { background: linear-gradient(145deg, #f08747, #9d3922); }
+.art-purple, .detail-hero-art.art-purple { background: linear-gradient(145deg, #9456c8, #49206b); }
+.art-yellow, .detail-hero-art.art-yellow { background: linear-gradient(145deg, #e4b635, #9c6512); }
 .art-label { position: relative; z-index: 2; font-size: 24px; line-height: 1.05; font-weight: 900; letter-spacing: -.04em; }
 .card-body { padding: 18px; }
 .card-kicker { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; font-weight: 700; }

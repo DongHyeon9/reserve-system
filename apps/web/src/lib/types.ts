@@ -53,3 +53,5 @@ export type Reservation = {
   cancellableUntil: string;
   cancellable: boolean;
 };
+
+export type PopupFacets = { areas: string[]; categories: string[] };

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { dDay, kstDateKey, kstDateTime, kstDayChip, kstTime, shortDate } from "./time";
+import { dDay, kstDateKey, kstDateTime, kstDayChip, kstMonthDayTime, kstTime, longDate, shortDate } from "./time";
 
 test("UTC instants are shown in KST regardless of the machine time zone", () => {
   expect(kstTime("2026-10-18T06:00:00Z")).toBe("15:00");
@@ -21,4 +21,9 @@ test("D-day counts KST calendar days from server time", () => {
   expect(dDay("2026-10-20T05:00:00Z", "2026-10-10T03:00:00Z")).toBe("D-10");
   expect(dDay("2026-10-20T05:00:00Z", "2026-10-19T15:30:00Z")).toBe("D-DAY");
   expect(dDay("2026-10-20T05:00:00Z", "2026-10-21T00:00:00Z")).toBe("D-DAY");
+});
+
+test("month-day labels drop leading zeros", () => {
+  expect(kstMonthDayTime("2026-10-20T05:00:00Z")).toBe("10월 20일 14:00");
+  expect(longDate("2026-11-03")).toBe("2026년 11월 3일");
 });
