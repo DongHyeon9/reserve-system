@@ -6,6 +6,7 @@ import { CustomerHeader } from "./CustomerHeader";
 
 let pathname = "/";
 vi.mock("next/navigation", () => ({ usePathname: () => pathname }));
+vi.mock("@/app/auth-actions", () => ({ logout: vi.fn() }));
 afterEach(cleanup);
 
 test("customer header marks the current section", () => {
@@ -21,4 +22,12 @@ test("admin shell exposes labelled navigation and a main landmark", () => {
   expect(screen.getByRole("link", { name: "대시보드" }).getAttribute("aria-current")).toBe("page");
   expect(screen.getByRole("link", { name: "팝업 관리" }).getAttribute("aria-current")).toBeNull();
   expect(screen.getByRole("main").textContent).toBe("본문");
+});
+
+test("customer header switches between login link and logout button", () => {
+  pathname = "/";
+  const { rerender } = render(<CustomerHeader />);
+  expect(screen.getByRole("link", { name: "로그인" }).getAttribute("href")).toBe("/login");
+  rerender(<CustomerHeader signedIn />);
+  expect(screen.getByRole("button", { name: "로그아웃" })).toBeDefined();
 });

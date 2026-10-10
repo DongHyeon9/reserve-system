@@ -32,7 +32,7 @@ class ApiApplicationTests {
 
 	@Test
 	void otherActuatorEndpointsAreNotExposed() throws Exception {
-		mvc.perform(get("/actuator/env")).andExpect(status().isNotFound());
+		mvc.perform(get("/actuator/env").header("Authorization", TestTokens.bearer(java.util.UUID.randomUUID()))).andExpect(status().isNotFound());
 	}
 
 	@Test

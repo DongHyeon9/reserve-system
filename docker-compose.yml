@@ -22,6 +22,9 @@ services:
       DB_URL: jdbc:postgresql://db:5432/popspot
       DB_USERNAME: popspot
       DB_PASSWORD: ${POSTGRES_PASSWORD:-popspot_local}
+      AUTH_ISSUER: ${AUTH_ISSUER:-popspot-dev}
+      AUTH_JWKS_URI: ${AUTH_JWKS_URI:-}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-}
     ports:
       - "8080:8080"
     depends_on:

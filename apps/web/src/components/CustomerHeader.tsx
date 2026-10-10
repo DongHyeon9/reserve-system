@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/app/auth-actions";
 
 const links = [
   { href: "/popups", label: "팝업 둘러보기" },
   { href: "/reservations", label: "내 예약" },
 ];
 
-export function CustomerHeader() {
+export function CustomerHeader({ signedIn = false }: { signedIn?: boolean }) {
   const pathname = usePathname();
   return (
     <header className="site-header">
@@ -24,9 +25,15 @@ export function CustomerHeader() {
           ))}
         </nav>
         <div className="header-actions">
-          <Link className="btn btn-secondary btn-sm" href="/login">
-            로그인
-          </Link>
+          {signedIn ? (
+            <form action={logout}>
+              <button className="btn btn-secondary btn-sm" type="submit">로그아웃</button>
+            </form>
+          ) : (
+            <Link className="btn btn-secondary btn-sm" href="/login">
+              로그인
+            </Link>
+          )}
         </div>
       </div>
     </header>

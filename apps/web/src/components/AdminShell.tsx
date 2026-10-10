@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/app/auth-actions";
 
 const links = [
   { href: "/admin", icon: "▦", label: "대시보드" },
@@ -14,7 +15,7 @@ function isActive(pathname: string, href: string) {
   return href === "/admin" ? pathname === href : pathname.startsWith(href);
 }
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({ children, email }: { children: React.ReactNode; email?: string }) {
   const pathname = usePathname();
   return (
     <div className="admin-view">
@@ -34,6 +35,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </aside>
         <div className="admin-main">
           <header className="admin-topbar">
+            {email && <span className="small muted">{email}</span>}
+            <form action={logout}>
+              <button className="btn btn-ghost btn-sm" type="submit">로그아웃</button>
+            </form>
             <Link className="btn btn-secondary btn-sm" href="/">
               고객 화면 보기 ↗
             </Link>
