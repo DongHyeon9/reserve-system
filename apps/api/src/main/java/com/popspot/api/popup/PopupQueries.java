@@ -33,7 +33,7 @@ public class PopupQueries {
 			""";
 
 	private static final String FILTER = """
-			where p.publish_status = 'PUBLISHED'
+			where p.publish_status = 'PUBLISHED' and not p.synthetic
 			  and (cast(:q as text) is null or position(lower(:q) in lower(p.title || ' ' || p.label)) > 0)
 			  and (cast(:area as text) is null or p.area = :area)
 			  and (cast(:category as text) is null or p.category = :category)
@@ -79,7 +79,7 @@ public class PopupQueries {
 
 	/** Drafts are invisible to customers; ended popups stay reachable from old links and show as CLOSED. */
 	public Optional<PopupRow> findVisible(long id, Instant now) {
-		return jdbc.sql(POPUP_WITH_SEATS + " where p.id = :id and p.publish_status <> 'DRAFT'")
+		return jdbc.sql(POPUP_WITH_SEATS + " where p.id = :id and p.publish_status <> 'DRAFT' and not p.synthetic")
 			.param("now", Timestamp.from(now))
 			.param("id", id)
 			.query(PopupQueries::popupRow)
@@ -107,7 +107,7 @@ public class PopupQueries {
 		if (!column.equals("area") && !column.equals("category")) {
 			throw new IllegalArgumentException(column);
 		}
-		return jdbc.sql("select distinct " + column + " from popups where publish_status = 'PUBLISHED' order by 1").query(String.class).list();
+		return jdbc.sql("select distinct " + column + " from popups where publish_status = 'PUBLISHED' and not synthetic order by 1").query(String.class).list();
 	}
 
 	public static PopupRow popupRow(ResultSet rs, int rowNum) throws SQLException {

@@ -46,6 +46,16 @@ public class ReservationService {
 	 */
 	@Transactional
 	public Created create(UUID user, String idempotencyKey, CreateReservationRequest req) {
+		return create(user, idempotencyKey, req, false);
+	}
+
+	/** Ops-test runner entry point: the only caller allowed to book synthetic (SANDBOX) targets. */
+	@Transactional
+	public Created createForSyntheticTarget(UUID user, String idempotencyKey, CreateReservationRequest req) {
+		return create(user, idempotencyKey, req, true);
+	}
+
+	private Created create(UUID user, String idempotencyKey, CreateReservationRequest req, boolean allowSynthetic) {
 		if (idempotencyKey.length() < 8 || idempotencyKey.length() > 100) {
 			throw ApiException.badRequest("IDEMPOTENCY_KEY_INVALID", "Idempotency-Key는 8~100자여야 합니다.");
 		}
@@ -64,9 +74,9 @@ public class ReservationService {
 		Target target = jdbc.sql("""
 				select s.popup_id, s.starts_at, p.publish_status, p.manually_closed, p.opens_at, p.closes_at, p.max_party_size
 				from slots s join popups p on p.id = s.popup_id
-				where s.id = ? and p.publish_status <> 'DRAFT'
+				where s.id = ? and p.publish_status <> 'DRAFT' and (p.synthetic = false or ?)
 				for share of p""")
-			.param(req.slotId())
+			.params(req.slotId(), allowSynthetic)
 			.query((rs, i) -> new Target(rs.getLong("popup_id"), ReservationQueries.instant(rs, "starts_at"), rs.getString("publish_status"),
 					rs.getBoolean("manually_closed"), ReservationQueries.instant(rs, "opens_at"), ReservationQueries.instant(rs, "closes_at"),
 					rs.getInt("max_party_size")))

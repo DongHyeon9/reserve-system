@@ -299,6 +299,7 @@ button.text-link { padding: 0; background: none; border: 0; cursor: pointer; }
 .metric-card span { display: block; color: #9aa3b7; font-size: 12px; }
 .metric-card strong { display: block; margin-top: 6px; font-size: 24px; font-variant-numeric: tabular-nums; }
 .metric-ok { color: #6ce0a0 !important; }
+.metric-danger { color: #ff8a80 !important; }
 .debug-log { max-height: 170px; overflow: auto; margin: 0; padding: 14px; color: #bdc6d9; background: #10131a; border-radius: 9px; font: 12px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; }
 .debug-run-card { margin-top: 18px; background: #181a22; border-color: #303541; color: white; }
 .debug-run-card .admin-card-head { border-color: #303541; }

@@ -136,3 +136,24 @@ export type AdminReservation = AdminReservationRow & {
 };
 
 export type ReservationContact = { contactPhone: string; contactEmail: string };
+
+export type OpsScenario = "LOAD" | "CONCURRENT_RESERVE" | "LATENCY" | "FAULT";
+export type OpsRunStatus = "RUNNING" | "STOPPED" | "COMPLETED" | "FAILED";
+export type OpsLimits = { maxVirtualUsers: number; maxRps: number; maxDurationSeconds: number; dataTtlMinutes: number };
+export type OpsConfig = { enabled: boolean; environment: string; limits: OpsLimits };
+
+export type OpsRun = {
+  id: string;
+  scenario: OpsScenario;
+  status: OpsRunStatus;
+  virtualUsers: number;
+  targetRps: number;
+  durationSeconds: number;
+  capacity: number;
+  startedAt: string;
+  endedAt: string | null;
+  startedByMasked: string;
+  metrics: { requests: number; successes: number; failures: number; p95Ms: number; reservedCount: number; overbooked: number };
+  /** Latest 20, already masked by Spring. */
+  events: string[];
+};

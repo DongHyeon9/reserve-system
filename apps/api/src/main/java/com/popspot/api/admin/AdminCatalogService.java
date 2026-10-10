@@ -55,7 +55,7 @@ class AdminCatalogService {
 	PageResponse<AdminPopupRow> list(String q, String status, int page, int size) {
 		Instant now = clock.instant();
 		String filter = """
-				 where (cast(:q as text) is null or position(lower(:q) in lower(p.title || ' ' || p.label)) > 0)
+				 where not p.synthetic and (cast(:q as text) is null or position(lower(:q) in lower(p.title || ' ' || p.label)) > 0)
 				   and (cast(:status as text) is null or p.publish_status = :status)""";
 		var items = jdbc.sql(PopupQueries.POPUP_WITH_SEATS.replace("select p.*,", "select p.*, " + COUNTERS + ",") + " " + filter
 				+ " order by p.updated_at desc, p.id desc limit :size offset :offset")
@@ -77,7 +77,7 @@ class AdminCatalogService {
 	@Transactional(readOnly = true)
 	AdminPopup get(long id) {
 		Instant now = clock.instant();
-		return jdbc.sql(PopupQueries.POPUP_WITH_SEATS.replace("select p.*,", "select p.*, " + COUNTERS + ",") + " where p.id = :id")
+		return jdbc.sql(PopupQueries.POPUP_WITH_SEATS.replace("select p.*,", "select p.*, " + COUNTERS + ",") + " where p.id = :id and not p.synthetic")
 			.param("now", Timestamp.from(now))
 			.param("id", id)
 			.query((rs, i) -> {
@@ -225,6 +225,7 @@ class AdminCatalogService {
 	/** The predicate makes the check atomic with concurrent bookings, which hold the same row lock. */
 	@Transactional
 	AdminSlot updateCapacity(UUID actor, long slotId, int capacity) {
+		findSlot(slotId); // 404 for unknown or synthetic (ops-test) slots
 		int updated = jdbc.sql("update slots set capacity = ? where id = ? and reserved_count <= ?").params(capacity, slotId, capacity).update();
 		AdminSlot slot = findSlot(slotId);
 		if (updated == 0) {
@@ -252,7 +253,8 @@ class AdminCatalogService {
 	}
 
 	private AdminSlot findSlot(long slotId) {
-		return jdbc.sql("select id, starts_at, ends_at, capacity, reserved_count from slots where id = ?")
+		// Synthetic (ops-test) slots are owned by the test runner and invisible to catalog management.
+		return jdbc.sql("select s.id, s.starts_at, s.ends_at, s.capacity, s.reserved_count from slots s join popups p on p.id = s.popup_id where s.id = ? and not p.synthetic")
 			.param(slotId)
 			.query((rs, i) -> slot(rs.getLong("id"), rs.getTimestamp("starts_at").toInstant(), rs.getTimestamp("ends_at").toInstant(),
 					rs.getInt("capacity"), rs.getInt("reserved_count")))

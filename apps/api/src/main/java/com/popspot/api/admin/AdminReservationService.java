@@ -34,7 +34,8 @@ class AdminReservationService {
 			""";
 
 	private static final String FILTER = """
-			where (cast(:q as text) is null
+			where not exists (select 1 from popups sp where sp.id = r.popup_id and sp.synthetic)
+			  and (cast(:q as text) is null
 			       or starts_with(upper(r.code), upper(:q))
 			       or position(lower(:q) in lower(r.contact_name)) > 0
 			       or (cast(:digits as text) is not null and right(regexp_replace(r.contact_phone, '[^0-9]', '', 'g'), length(:digits)) = :digits))

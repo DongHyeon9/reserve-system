@@ -200,6 +200,80 @@
         }
       }
     },
+    "/api/ops/tests" : {
+      "get" : {
+        "tags" : [ "ops-test-controller" ],
+        "operationId" : "recent",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Run"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "ops-test-controller" ],
+        "operationId" : "start",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/StartRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Run"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ops/tests/{id}/stop" : {
+      "post" : {
+        "tags" : [ "ops-test-controller" ],
+        "operationId" : "stop",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Run"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/reservations/{id}/contact" : {
       "post" : {
         "tags" : [ "admin-reservation-controller" ],
@@ -665,6 +739,43 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Facets"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ops/tests/current" : {
+      "get" : {
+        "tags" : [ "ops-test-controller" ],
+        "operationId" : "current",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Run"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ops/tests/config" : {
+      "get" : {
+        "tags" : [ "ops-test-controller" ],
+        "operationId" : "config",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object",
+                  "additionalProperties" : { }
                 }
               }
             }
@@ -1138,6 +1249,120 @@
           "endsAt" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "StartRequest" : {
+        "type" : "object",
+        "properties" : {
+          "scenario" : {
+            "type" : "string",
+            "pattern" : "LOAD|CONCURRENT_RESERVE|LATENCY|FAULT"
+          },
+          "virtualUsers" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1
+          },
+          "targetRps" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1
+          },
+          "durationSeconds" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 60,
+            "minimum" : 5
+          },
+          "capacity" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 200,
+            "minimum" : 1
+          }
+        },
+        "required" : [ "capacity", "durationSeconds", "scenario", "targetRps", "virtualUsers" ]
+      },
+      "Metrics" : {
+        "type" : "object",
+        "properties" : {
+          "requests" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "successes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "failures" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "p95Ms" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "reservedCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "overbooked" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "Run" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "scenario" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "virtualUsers" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "targetRps" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "durationSeconds" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "capacity" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "startedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "endedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "startedByMasked" : {
+            "type" : "string"
+          },
+          "metrics" : {
+            "$ref" : "#/components/schemas/Metrics"
+          },
+          "events" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
