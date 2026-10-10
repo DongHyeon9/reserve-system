@@ -1,0 +1,36 @@
+name: Rollback API
+
+# Sends all Cloud Run traffic back to a known-good revision. Find revisions with:
+#   gcloud run revisions list --service popspot-api --region asia-northeast3
+# The web app is rolled back in the Vercel dashboard (Deployments → ... → Promote to Production).
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Cloud Run revision name to restore (e.g. popspot-api-00012-abc)
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  rollback:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Shift traffic
+        env:
+          REVISION: ${{ inputs.revision }}
+          REGION: ${{ vars.GCP_REGION || 'asia-northeast3' }}
+        run: |
+          [[ "$REVISION" =~ ^popspot-api-[a-z0-9-]+$ ]] || { echo "invalid revision name"; exit 1; }
+          gcloud run services update-traffic popspot-api --region "$REGION" --to-revisions "$REVISION=100" --quiet
+          url=$(gcloud run services describe popspot-api --region "$REGION" --format 'value(status.url)')
+          curl -sf "$url/actuator/health/readiness"

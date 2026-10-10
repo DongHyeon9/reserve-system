@@ -11,7 +11,9 @@ export function CustomerFooter() {
             </Link>
             <p className="small muted">도시의 다음 장면을 예약하세요.</p>
           </div>
-          <p className="small muted">고객센터 10:00—18:00 · 이용약관 · 개인정보처리방침</p>
+          <p className="small muted">
+            고객센터 10:00—18:00 · <Link href="/terms">이용약관</Link> · <Link href="/privacy">개인정보처리방침</Link>
+          </p>
         </div>
       </div>
     </footer>

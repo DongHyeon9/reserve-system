@@ -1,0 +1,102 @@
+name: Deploy
+
+# Production deploy runs only after CI succeeded on main (or manually). Setup steps: todo/05-deploy.md.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  REGION: ${{ vars.GCP_REGION || 'asia-northeast3' }}
+  SERVICE: popspot-api
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  api:
+    name: Spring → Cloud Run
+    # Only code that landed on main of this repository: never a PR or fork run, even if its CI passed.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation: no long-lived GCP key in GitHub
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Build and push image
+        id: image
+        run: |
+          image="${REGION}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/popspot/api:${SHA}"
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -t "$image" apps/api
+          docker push "$image"
+          echo "ref=$(docker inspect --format '{{index .RepoDigests 0}}' "$image")" >> "$GITHUB_OUTPUT"
+      - name: Deploy by digest
+        id: deploy
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --image "${{ steps.image.outputs.ref }}" \
+            --region "$REGION" \
+            --service-account "${{ vars.GCP_RUNTIME_SA }}" \
+            --allow-unauthenticated \
+            --port 8080 --cpu 1 --memory 1Gi --cpu-boost \
+            --min-instances "${{ vars.API_MIN_INSTANCES || '0' }}" --max-instances 3 \
+            --set-env-vars "^@^SPRING_PROFILES_ACTIVE=prod@AUTH_ISSUER=${{ vars.AUTH_ISSUER }}@AUTH_JWKS_URI=${{ vars.AUTH_JWKS_URI }}@DB_URL=${{ vars.DB_URL }}@DB_USERNAME=${{ vars.DB_USERNAME }}@FLYWAY_LOCATIONS=${{ vars.FLYWAY_LOCATIONS || 'classpath:db/migration' }}@FLYWAY_OUT_OF_ORDER=${{ vars.FLYWAY_OUT_OF_ORDER || 'false' }}" \
+            --set-secrets "DB_PASSWORD=popspot-db-password:latest" \
+            --quiet
+          echo "url=$(gcloud run services describe "$SERVICE" --region "$REGION" --format 'value(status.url)')" >> "$GITHUB_OUTPUT"
+      - name: Smoke test
+        run: |
+          for _ in $(seq 1 20); do curl -sf "${{ steps.deploy.outputs.url }}/actuator/health/readiness" && exit 0; sleep 5; done
+          exit 1
+
+  web:
+    name: Next.js → Vercel
+    needs: api
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npx --yes vercel@60.1.1 pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
+      - run: npx --yes vercel@60.1.1 build --prod --token="${{ secrets.VERCEL_TOKEN }}"
+      - name: Deploy prebuilt output
+        id: deploy
+        run: |
+          url=$(npx --yes vercel@60.1.1 deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}" --env "API_BASE_URL=${{ needs.api.outputs.url }}")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - name: Smoke test
+        run: curl -sf -o /dev/null "${{ steps.deploy.outputs.url }}/login"
