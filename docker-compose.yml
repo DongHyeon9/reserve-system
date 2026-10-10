@@ -1,0 +1,33 @@
+# Local development only. Next.js runs on the host with `npm run web:dev`.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: popspot
+      POSTGRES_USER: popspot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-popspot_local}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U popspot -d popspot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./apps/api
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/popspot
+      DB_USERNAME: popspot
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-popspot_local}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db-data:

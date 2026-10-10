@@ -4,6 +4,8 @@
   "scripts": {
     "web:dev": "npm --prefix apps/web run dev",
     "web:check": "npm --prefix apps/web run lint && npm --prefix apps/web run typecheck && npm --prefix apps/web test && npm --prefix apps/web run build",
+    "db:up": "docker compose up -d db",
+    "stack:up": "docker compose up --build -d",
     "api:dev": "node scripts/gradle.mjs bootRun",
     "api:check": "node scripts/gradle.mjs build",
     "check": "npm run web:check && npm run api:check"
