@@ -1,6 +1,6 @@
 name: Deploy
 
-# Production deploy runs only after CI succeeded on main (or manually). Setup steps: todo/05-deploy.md.
+# Production deploy runs only after CI succeeded on main (or manually). Setup steps: todo/05-deploy.html.
 on:
   workflow_run:
     workflows: [CI]

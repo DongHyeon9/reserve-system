@@ -1,5 +1,5 @@
 // Social sign-in providers shown on the login page. Enabled per environment with AUTH_PROVIDERS=google,kakao so a
-// button only appears once the provider is configured in Supabase (see todo/04-social-login.md).
+// button only appears once the provider is configured in Supabase (see todo/04-social-login.html).
 export const OAUTH_LABELS = { google: "Google로 계속하기", kakao: "카카오로 계속하기" } as const;
 export type OAuthProvider = keyof typeof OAUTH_LABELS;
 
