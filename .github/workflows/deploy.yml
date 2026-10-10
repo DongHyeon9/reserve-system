@@ -54,6 +54,8 @@ jobs:
           docker build -t "$image" apps/api
           docker push "$image"
           echo "ref=$(docker inspect --format '{{index .RepoDigests 0}}' "$image")" >> "$GITHUB_OUTPUT"
+      # --max-instances 3 x DB pool 2 per revision keeps a rolling deploy under Supabase's 15-client session cap
+      # (see application-prod.properties); raise both together.
       - name: Deploy by digest
         id: deploy
         run: |
