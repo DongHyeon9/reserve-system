@@ -5,6 +5,7 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     message: string,
+    readonly fieldErrors: { field: string; message: string }[] = [],
   ) {
     super(message);
   }
@@ -28,7 +29,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   }
   if (!response.ok) {
     const problem = await response.json().catch(() => ({}));
-    throw new ApiError(response.status, problem.code ?? "UNKNOWN", problem.detail ?? "요청을 처리하지 못했습니다.");
+    throw new ApiError(response.status, problem.code ?? "UNKNOWN", problem.detail ?? "요청을 처리하지 못했습니다.", problem.errors ?? []);
   }
   return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
 }
