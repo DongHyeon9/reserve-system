@@ -400,3 +400,5 @@ dialog::backdrop { background: rgb(17 17 17 / 55%); backdrop-filter: blur(2px); 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
+.btn-kakao { color: #191919; background: #fee500; }
+.btn-kakao:hover { background: #f5dc00; }

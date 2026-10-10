@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { authErrorCode } from "@/lib/auth-errors";
 import { devAuthEnabled, signDevJwt } from "@/lib/dev-auth";
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, safeNextPath } from "@/lib/session";
+import { enabledProviders, isOAuthProvider, kakaoScopes, oauthRedirectTo } from "@/lib/oauth";
 import { siteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
@@ -58,6 +59,28 @@ export async function signup(formData: FormData) {
   }
   if (data.session) redirect(next);
   redirect(`/login?notice=check-email&next=${encodeURIComponent(next)}`);
+}
+
+/** Starts Google/Kakao sign-in. Supabase stores the PKCE verifier in cookies; /auth/callback completes the session. */
+export async function oauthLogin(formData: FormData) {
+  const { next, back } = fields(formData);
+  const provider = formData.get("provider");
+  if (!isOAuthProvider(provider) || !enabledProviders().includes(provider)) back("unavailable");
+  const site = siteUrl();
+  if (!site) {
+    console.error("NEXT_PUBLIC_SITE_URL is missing or invalid; refusing to start OAuth sign-in.");
+    back("unavailable");
+  }
+
+  const { data, error } = await (await createClient()).auth.signInWithOAuth({
+    provider: provider as "google" | "kakao",
+    options: { redirectTo: oauthRedirectTo(site!, next), scopes: provider === "kakao" ? kakaoScopes() : undefined },
+  });
+  if (error || !data.url) {
+    console.warn("Supabase OAuth start failed", { provider, code: error?.code, status: error?.status });
+    back("unavailable");
+  }
+  redirect(data.url!);
 }
 
 export async function logout() {

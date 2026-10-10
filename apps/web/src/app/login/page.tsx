@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { login } from "@/app/auth-actions";
 import { AuthForm } from "@/components/AuthForm";
+import { SocialLogin } from "@/components/SocialLogin";
+import { enabledProviders } from "@/lib/oauth";
 import { AUTH_ERROR_MESSAGES as errors } from "@/lib/auth-errors";
 import { devAuthEnabled } from "@/lib/dev-auth";
 import { safeNextPath } from "@/lib/session";
@@ -42,7 +44,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="auth-form-wrap">
           {dev ? <DevLoginForm next={nextPath}>{messages}</DevLoginForm> : (
-            <AuthForm next={nextPath} initialMode={mode === "signup" ? "signup" : "login"}>{messages}</AuthForm>
+            <AuthForm
+              next={nextPath}
+              initialMode={mode === "signup" ? "signup" : "login"}
+              social={<SocialLogin providers={enabledProviders()} next={nextPath} loginPath="/login" />}
+            >
+              {messages}
+            </AuthForm>
           )}
         </div>
       </main>

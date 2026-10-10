@@ -7,7 +7,9 @@ export function siteUrl(env: Record<string, string | undefined> = process.env): 
   if (configured) {
     try {
       const url = new URL(configured);
-      if (url.protocol === "https:" || url.protocol === "http:") return url.origin;
+      const local = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+      // Auth codes ride on this origin: plain HTTP only for a local machine, even in a production build.
+      if (url.protocol === "https:" || (url.protocol === "http:" && (local || env.NODE_ENV !== "production"))) return url.origin;
     } catch {
       return null;
     }

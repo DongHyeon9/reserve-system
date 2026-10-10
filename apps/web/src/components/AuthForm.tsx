@@ -4,11 +4,23 @@ import { useState } from "react";
 import { login, signup } from "@/app/auth-actions";
 
 /** Supabase email + password form with the design's login / sign-up toggle. */
-export function AuthForm({ next, initialMode = "login", children }: { next: string; initialMode?: "login" | "signup"; children?: React.ReactNode }) {
+export function AuthForm({
+  next,
+  initialMode = "login",
+  children,
+  social,
+}: {
+  next: string;
+  initialMode?: "login" | "signup";
+  children?: React.ReactNode;
+  /** Rendered after the form: OAuth buttons are separate forms and cannot be nested inside this one. */
+  social?: React.ReactNode;
+}) {
   const [mode, setMode] = useState(initialMode);
   const signingUp = mode === "signup";
   return (
-    <form className="auth-form" action={signingUp ? signup : login}>
+    <div className="auth-form">
+    <form action={signingUp ? signup : login}>
       <p className="eyebrow">{signingUp ? "Join Popspot" : "Welcome back"}</p>
       <h2 style={{ fontSize: 36 }}>{signingUp ? "회원가입" : "로그인"}</h2>
       <p className="muted">
@@ -45,7 +57,9 @@ export function AuthForm({ next, initialMode = "login", children }: { next: stri
         />
       </div>
       <button className="btn btn-primary btn-block" type="submit">{signingUp ? "가입하고 계속" : "로그인하고 계속"}</button>
-      <p className="small muted" style={{ marginTop: 20 }}>계속하면 Popspot의 이용약관과 개인정보처리방침에 동의하게 됩니다.</p>
     </form>
+      {social}
+      <p className="small muted" style={{ marginTop: 20 }}>계속하면 Popspot의 이용약관과 개인정보처리방침에 동의하게 됩니다.</p>
+    </div>
   );
 }
