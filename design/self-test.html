@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+  <head><meta charset="utf-8" /><title>Popspot prototype self-test</title></head>
+  <body data-status="running">
+    <h1>Popspot prototype self-test</h1>
+    <pre id="result">RUNNING</pre>
+    <iframe id="prototype" title="테스트 대상" style="position:absolute;width:1px;height:1px;left:-9999px"></iframe>
+    <script>
+      const frame = document.querySelector("#prototype");
+      const result = document.querySelector("#result");
+
+      function assert(condition, message) {
+        if (!condition) throw new Error(message);
+      }
+
+      function loadRoute(route) {
+        return new Promise(resolve => {
+          frame.addEventListener("load", resolve, { once: true });
+          frame.src = `index.html?selftest=${route}#${route}`;
+        });
+      }
+
+      async function run() {
+        await loadRoute("home");
+        let doc = frame.contentDocument;
+        assert(doc.querySelectorAll("#screen-select option").length === 17, "screen count");
+        assert(getComputedStyle(doc.body).fontFamily.includes("Noto Sans KR"), "body font");
+        assert(getComputedStyle(doc.querySelector(".hero-copy h1")).fontFamily.includes("Black Han Sans"), "display font");
+
+        await loadRoute("popup-waiting");
+        doc = frame.contentDocument;
+        const waitingButton = [...doc.querySelectorAll("button")].find(button => button.textContent.includes("10월 20일 14:00 오픈"));
+        assert(waitingButton?.disabled, "waiting reservation block");
+
+        await loadRoute("admin-popup-form");
+        doc = frame.contentDocument;
+        assert(doc.querySelector("#popup-name").value === "루프 랩 체험 전시", "scheduled popup consistency");
+        const immediate = doc.querySelector('[data-open-mode][value="now"]');
+        immediate.click();
+        assert(doc.querySelector("#scheduled-open-field").hidden, "immediate open mode");
+        assert(doc.querySelector("#scheduled-open-notice").hidden, "scheduled notice sync");
+
+        await loadRoute("admin-debug");
+        doc = frame.contentDocument;
+        const runButton = doc.querySelector("#debug-run");
+        assert(runButton.disabled, "debug confirmation default");
+        doc.querySelector("#safety-check").click();
+        const confirm = doc.querySelector("#confirm-word");
+        confirm.value = "TEST";
+        confirm.dispatchEvent(new Event("input", { bubbles: true }));
+        assert(!runButton.disabled, "debug confirmation unlock");
+        const users = doc.querySelector("#virtual-users");
+        users.value = "101";
+        users.dispatchEvent(new Event("input", { bubbles: true }));
+        assert(runButton.disabled, "debug user limit");
+        users.value = "100";
+        users.dispatchEvent(new Event("input", { bubbles: true }));
+        users.value = "";
+        users.dispatchEvent(new Event("input", { bubbles: true }));
+        assert(runButton.disabled, "debug empty user limit");
+        users.value = "100";
+        users.dispatchEvent(new Event("input", { bubbles: true }));
+        doc.querySelectorAll("[data-debug-scenario]")[1].click();
+        doc.querySelector("#test-target").selectedIndex = 1;
+        runButton.click();
+        assert(!doc.querySelector("#debug-live").hidden, "debug live panel");
+        assert(doc.activeElement === doc.querySelector("[data-debug-stop]"), "debug run focus");
+        assert(doc.querySelector("#debug-status").nextElementSibling.textContent.includes("동시 예약"), "debug scenario summary");
+        doc.querySelector("[data-debug-stop]").click();
+        assert(doc.querySelector("#debug-status").textContent === "테스트 중지됨", "debug stop");
+        assert(runButton.textContent === "테스트 실행" && !runButton.disabled, "debug restart state");
+        assert(doc.activeElement === doc.querySelector("#debug-status"), "debug stop focus");
+
+        document.body.dataset.status = "pass";
+        result.textContent = "PASS · 17 assertions";
+      }
+
+      run().catch(error => {
+        document.body.dataset.status = "fail";
+        result.textContent = `FAIL · ${error.message}`;
+      });
+    </script>
+  </body>
+</html>
