@@ -10,6 +10,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +27,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.popspot.api.TestTokens;
 import com.popspot.api.TestcontainersConfiguration;
@@ -36,6 +43,9 @@ class AdminCatalogTests {
 
 	@Autowired
 	JdbcClient jdbc;
+
+	@Autowired
+	PlatformTransactionManager transactions;
 
 	UUID admin;
 
@@ -188,6 +198,58 @@ class AdminCatalogTests {
 			.andExpect(jsonPath("$.items.length()").value(0))
 			.andExpect(jsonPath("$.totalItems").value(2));
 		call(get("/api/admin/popups").param("status", "BOGUS")).andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void draftSwitchWaitsForInFlightBookingThenRefuses() throws Exception {
+		long id = createPopup("PUBLISHED", "2031-05-01", "2031-05-10");
+		long slot = id(call(post("/api/admin/popups/{id}/slots", id).contentType(MediaType.APPLICATION_JSON)
+			.content("{\"startsAt\":\"2031-05-02T15:00:00+09:00\",\"endsAt\":\"2031-05-02T16:00:00+09:00\",\"capacity\":10}")));
+		String loadedAt = updatedAt(id);
+		// Same locks as ReservationService.create: FOR SHARE on the popup, then take a seat and insert the booking.
+		Future<Integer> admin = whileBookingInFlight("select id from popups where id = " + id + " for share", id, slot,
+				() -> call(put("/api/admin/popups/{id}", id).contentType(MediaType.APPLICATION_JSON).content(form("DRAFT", "2031-05-01", "2031-05-10", loadedAt)))
+					.andReturn().getResponse().getStatus());
+		assertThat(admin.get(10, TimeUnit.SECONDS)).isEqualTo(409);
+		call(get("/api/admin/popups/{id}", id)).andExpect(jsonPath("$.publishStatus").value("PUBLISHED"));
+	}
+
+	@Test
+	void slotDeleteWaitsForInFlightBookingThenRefuses() throws Exception {
+		long id = createPopup("PUBLISHED", "2031-05-01", "2031-05-10");
+		long slot = id(call(post("/api/admin/popups/{id}/slots", id).contentType(MediaType.APPLICATION_JSON)
+			.content("{\"startsAt\":\"2031-05-02T15:00:00+09:00\",\"endsAt\":\"2031-05-02T16:00:00+09:00\",\"capacity\":10}")));
+		Future<Integer> admin = whileBookingInFlight("select id from popups where id = " + id + " for share", id, slot,
+				() -> call(delete("/api/admin/slots/{id}", slot)).andReturn().getResponse().getStatus());
+		assertThat(admin.get(10, TimeUnit.SECONDS)).isEqualTo(409);
+	}
+
+	/** Holds an uncommitted booking, starts the admin call, checks that it blocks, then commits the booking. */
+	private Future<Integer> whileBookingInFlight(String popupLock, long popupId, long slotId, java.util.concurrent.Callable<Integer> adminCall)
+			throws Exception {
+		ExecutorService pool = Executors.newFixedThreadPool(2);
+		CountDownLatch locked = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
+		Future<?> booking = pool.submit(() -> new TransactionTemplate(transactions).executeWithoutResult(tx -> {
+			jdbc.sql(popupLock).query(Long.class).single();
+			jdbc.sql("update slots set reserved_count = reserved_count + 1 where id = ?").param(slotId).update();
+			insertReservation(popupId, slotId);
+			locked.countDown();
+			try {
+				release.await();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}));
+		locked.await();
+		Future<Integer> admin = pool.submit(adminCall);
+		Thread.sleep(500);
+		assertThat(admin.isDone()).as("admin change must wait for the in-flight booking").isFalse();
+		release.countDown();
+		booking.get(10, TimeUnit.SECONDS);
+		pool.shutdown();
+		return admin;
 	}
 
 	@Test

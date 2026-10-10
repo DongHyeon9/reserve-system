@@ -24,6 +24,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-popspot_local}
       AUTH_ISSUER: ${AUTH_ISSUER:-popspot-dev}
       FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/seed
+      FLYWAY_OUT_OF_ORDER: "true"
       AUTH_JWKS_URI: ${AUTH_JWKS_URI:-}
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-}
       DEV_AUTH_ISSUER: ${DEV_AUTH_ISSUER:-}

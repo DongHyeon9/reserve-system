@@ -68,8 +68,14 @@ class ApiExceptionHandler {
 
 	@ExceptionHandler(Exception.class)
 	ResponseEntity<ApiProblem> unexpected(Exception e) {
-		// Class name only: exception messages can carry SQL parameters or personal data.
-		log.error("Unhandled API error: {}", e.getClass().getName(), e);
+		// Exception messages and causes can carry SQL values or personal data (e.g. constraint details), so production
+		// logs get class names only. Full detail is available at DEBUG for local diagnosis.
+		Throwable root = e;
+		while (root.getCause() != null && root.getCause() != root) {
+			root = root.getCause();
+		}
+		log.error("Unhandled API error: {} (root cause: {})", e.getClass().getName(), root.getClass().getName());
+		log.debug("Unhandled API error detail", e);
 		return problem(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "일시적인 오류가 발생했습니다.", List.of());
 	}
 

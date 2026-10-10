@@ -113,6 +113,8 @@ class AdminCatalogService {
 			throw ApiException.badRequest("VALIDATION_FAILED", "수정 기준 시각(expectedUpdatedAt)이 필요합니다.");
 		}
 		validatePeriod(form);
+		// Lock first, then read: in-flight bookings hold FOR SHARE on this row, so the checks below see every committed booking.
+		lockPopup(id);
 		AdminPopup current = get(id);
 		if ("DRAFT".equals(form.publishStatus()) && !"DRAFT".equals(current.publishStatus()) && current.activeReservations() > 0) {
 			throw ApiException.conflict("HAS_RESERVATIONS", "예약이 있는 팝업은 초안으로 되돌릴 수 없습니다.");
@@ -151,6 +153,7 @@ class AdminCatalogService {
 
 	@Transactional
 	void delete(UUID actor, long id) {
+		lockPopup(id);
 		AdminPopup current = get(id);
 		if (!"DRAFT".equals(current.publishStatus()) || current.slotCount() > 0) {
 			throw ApiException.conflict("POPUP_NOT_DELETABLE", "회차가 없는 초안만 삭제할 수 있습니다.");
@@ -233,6 +236,8 @@ class AdminCatalogService {
 
 	@Transactional
 	void deleteSlot(UUID actor, long slotId) {
+		// Bookings update the slot row, so this lock orders the reservation check after any in-flight booking.
+		jdbc.sql("select id from slots where id = ? for update").param(slotId).query(Long.class).optional().orElseThrow(ApiException::notFound);
 		AdminSlot slot = findSlot(slotId);
 		boolean hasReservations = jdbc.sql("select exists (select 1 from reservations where slot_id = ?)").param(slotId).query(Boolean.class).single();
 		if (hasReservations) {
@@ -240,6 +245,10 @@ class AdminCatalogService {
 		}
 		jdbc.sql("delete from slots where id = ?").param(slotId).update();
 		audit.record(actor, "SLOT_DELETED", "SLOT", slotId, Map.of("startsAt", slot.startsAt().toString()));
+	}
+
+	private void lockPopup(long id) {
+		jdbc.sql("select id from popups where id = ? for update").param(id).query(Long.class).optional().orElseThrow(ApiException::notFound);
 	}
 
 	private AdminSlot findSlot(long slotId) {

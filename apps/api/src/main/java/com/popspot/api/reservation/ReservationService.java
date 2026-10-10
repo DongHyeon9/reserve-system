@@ -59,10 +59,13 @@ public class ReservationService {
 			return replay(user, idempotencyKey, fingerprint, now);
 		}
 
+		// FOR SHARE on the popup row: an admin status change (draft, close) waits for in-flight bookings and vice versa,
+		// so the open-window check below cannot be invalidated before this booking commits.
 		Target target = jdbc.sql("""
 				select s.popup_id, s.starts_at, p.publish_status, p.manually_closed, p.opens_at, p.closes_at, p.max_party_size
 				from slots s join popups p on p.id = s.popup_id
-				where s.id = ? and p.publish_status <> 'DRAFT'""")
+				where s.id = ? and p.publish_status <> 'DRAFT'
+				for share of p""")
 			.param(req.slotId())
 			.query((rs, i) -> new Target(rs.getLong("popup_id"), ReservationQueries.instant(rs, "starts_at"), rs.getString("publish_status"),
 					rs.getBoolean("manually_closed"), ReservationQueries.instant(rs, "opens_at"), ReservationQueries.instant(rs, "closes_at"),

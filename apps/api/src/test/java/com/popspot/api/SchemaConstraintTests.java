@@ -80,6 +80,18 @@ class SchemaConstraintTests {
 			.param(user).update()).isInstanceOf(DataIntegrityViolationException.class);
 	}
 
+	@Test
+	void reservationPopupMustMatchItsSlot() {
+		long otherPopup = jdbc.sql("""
+				insert into popups (title, label, area, category, summary, address, operating_hours, visit_minutes, starts_on, ends_on, opens_at)
+				values ('o', 'O', '성수', '테크', 's', 'addr', '11-20', 40, '2026-11-01', '2026-11-17', '2026-10-20T05:00:00Z') returning id""")
+			.query(Long.class).single();
+		assertThatThrownBy(() -> jdbc.sql("""
+				insert into reservations (code, user_id, popup_id, slot_id, party_size, contact_name, contact_phone, contact_email)
+				values ('PS-X', ?, ?, ?, 1, '김팝업', '010-1234-5678', 'a@example.com')""").params(user, otherPopup, slot).update())
+			.isInstanceOf(DataIntegrityViolationException.class);
+	}
+
 	private void insertReservation(String code, String status) {
 		jdbc.sql("""
 				insert into reservations (code, user_id, popup_id, slot_id, party_size, contact_name, contact_phone, contact_email, status, cancelled_at)

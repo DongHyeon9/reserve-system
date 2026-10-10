@@ -1,10 +1,11 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { authErrorCode } from "@/lib/auth-errors";
 import { devAuthEnabled, signDevJwt } from "@/lib/dev-auth";
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, safeNextPath } from "@/lib/session";
+import { siteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,10 +40,16 @@ export async function signup(formData: FormData) {
   if (!validEmail || !name) back("invalid", "signup");
   if (password.length < MIN_PASSWORD) back("weak-password", "signup");
 
+  const site = siteUrl();
+  if (!site) {
+    console.error("NEXT_PUBLIC_SITE_URL is missing or invalid; refusing to build a confirmation link.");
+    back("unavailable", "signup");
+  }
+
   const { data, error } = await (await createClient()).auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(next)}`, data: { name } },
+    options: { emailRedirectTo: `${site}/auth/callback?next=${encodeURIComponent(next)}`, data: { name } },
   });
   if (error) {
     // Code and status only: the error message can echo the email address.
@@ -59,12 +66,6 @@ export async function logout() {
   redirect("/");
 }
 
-async function origin() {
-  const h = await headers();
-  const host = h.get("host");
-  if (host) return `${h.get("x-forwarded-proto") ?? "http"}://${host}`;
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-}
 
 // Local E2E only (DEV_AUTH_ENABLED=true): passwordless login that mints an HS256 token Spring's dev fallback accepts.
 async function devLogin(formData: FormData) {
